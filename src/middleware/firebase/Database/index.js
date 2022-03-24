@@ -1,81 +1,99 @@
-import firebaseInstance from '../'
+import firebaseInstance from '../index'
 
 export default {
     generateId,
-    get,
+    getUserTasks,
     createUser,
-    updateUserItem,
-    updateUser,
-    update,
+    updateUserTaskByID,
+    createUserTask,
     remove,
-    getRef
 }
 
-firebaseInstance.firebase.database().ref(`users`)
-    .on('child_changed', (snapshot) => {
-        console.log(snapshot)
-    });
+// firebaseInstance.firebase.database().ref(`users`)
+//     .on('child_changed', (snapshot) => {
+//         console.log(snapshot)
+//     });
 
 function generateId(options) {
     // debugger
-    return firebaseInstance.firebase.database().ref(options.entity).push()
+    return firebaseInstance.DB.ref(options.entity).push()
         .then(res => {
             console.log(res.key)
             return res.key
         })
 }
 
-function get(options) {
-    // eslint-disable-next-line no-debugger
+function getUserTasks() {
     debugger
-    return firebaseInstance.firebase.database().ref(`${options.entity}`).once(`value`)
-        .then(res => {
-            // eslint-disable-next-line no-debugger
+    let postElement = {};
+    let arrTask = [];
+    return firebaseInstance.get(firebaseInstance.child(firebaseInstance.dbRef, '/users/' + window.user.uid + '/tasks/')).then((snapshot) => {
+        if (snapshot.exists()) {
+            // console.log(snapshot.val());
+            let data = snapshot.val();
+            Object.assign(postElement, data);
             debugger
-            // המרה ל - firebase
-            const arr = [];
-            const map = res.val();
-            for (const Key in map) {
-                const item = map[Key];
-                item.id = Key;
-                arr.push(item);
+            for (const key in postElement) {
+                const objTask = {};
+                objTask.task = postElement[key].task
+                objTask.date = postElement[key].date
+                objTask.hour = postElement[key].hour
+                objTask.description = postElement[key].description
+                objTask.id = key
+                arrTask.push(objTask);
             }
-            return arr;
-        })
+            return arrTask;
+        } else {
+            console.log("No data available");
+        }
+    }).catch((error) => {
+        console.error(error);
+    });
 }
 
-function createUser(options) {
-    // eslint-disable-next-line no-debugger
+function createUser(details) {
     debugger
-    return firebaseInstance.firebase.database().ref(`${options.entity}/${window.user.uid}`).update(options.details);
+    return firebaseInstance.set(firebaseInstance.ref(firebaseInstance.DB, 'users/' + window.user.uid),
+        {details});
 }
 
-function updateUserItem(options) {
-    // eslint-disable-next-line no-debugger
+
+function createUserTask(data) {
     debugger
-    return firebaseInstance.firebase.database().ref(`${options.entity}/${window.user.uid}/${options.subEntity}`).update(options.item);
+    // Get a key for a new Post.
+    const newPostKey = firebaseInstance.push(firebaseInstance.child(firebaseInstance.ref(firebaseInstance.DB), 'tasks')).key;
+    // Write the new post's data simultaneously in the posts list and the user's post list.
+    const updates = {};
+    // updates['/task/' + newPostKey] = data;
+    updates['/users/' + window.user.uid + '/tasks/' + newPostKey] = data;
+    return firebaseInstance.update(firebaseInstance.ref(firebaseInstance.DB), updates);
 }
 
-function updateUser(options) {
-    // eslint-disable-next-line no-debugger
+function updateUserTaskByID(data, taskID) {
     debugger
-    return firebaseInstance.firebase.database().ref(`${options.entiti}/${window.user.uid}/${options.subEntity}`).update(options.itemx);
+    const updates = {};
+    updates['/users/' + window.user.uid + '/tasks/' + taskID] = data;
+    return firebaseInstance.update(firebaseInstance.ref(firebaseInstance.DB), updates);
 }
 
-function update(options) {
-    return firebaseInstance.firebase.database().ref(`${options.entity}/${options.id}`).set(options.item)
-        .then(() => {
-            // debugger
-            console.log(options.item);
+//
+// function remove(data, taskID) {
+//     debugger
+//     // Get a key for a new Post.
+//     // const newPostKey = firebaseInstance.push(firebaseInstance.child(firebaseInstance.ref(firebaseInstance.DB), 'tasks')).key;
+//     // Write the new post's data simultaneously in the posts list and the user's post list.
+//     const updates = {};
+//     // updates['/task/' + newPostKey] = data;
+//     // updates['/users/' + window.user.uid + '/tasks/' + taskID];
+//     return firebaseInstance.remove(firebaseInstance.ref(firebaseInstance.DB), ['/users/' + window.user.uid + '/tasks/' + taskID]);
+// }
+
+
+function remove(taskID) {
+    debugger
+    firebaseInstance.remove(firebaseInstance.ref(firebaseInstance.DB, '/users/' + window.user.uid + '/tasks/' + taskID))
+        .then(res => {
+            console.log(res, 'Deleted from DB')
         });
 }
 
-function remove(options) {
-    // eslint-disable-next-line no-debugger
-    debugger
-    return firebaseInstance.firebase.database().ref(`${options.entity}/${options.id}`).remove()
-}
-
-function getRef(options) {
-    return firebaseInstance.firebase.database().ref(`${options.entity}`)
-}

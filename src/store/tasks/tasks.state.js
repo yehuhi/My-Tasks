@@ -1,3 +1,8 @@
 export default {
-    task: {}
+    task: {},
+    newTaskAdd: '',
+    editTaskAdd: '',
+    removeTask:'',
+    userTasks: '',
+
 }
